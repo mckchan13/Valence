@@ -71,3 +71,16 @@ export type ValenceRoute = {
 export interface ValenceBuilder<T> {
   build: () => T;
 }
+
+export type RequestObject<T = unknown, K = string> = {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  route: K;
+  payload: T;
+  channel: string;
+};
+
+export type ResponseObject<T = unknown, K = unknown> = {
+  status: "success" | "failure";
+  context: K;
+  payload: T;
+};

@@ -4,10 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:jsdoc": "./node_modules/.bin/jsdoc ./src/Valence.js"
   },
   "devDependencies": {
     "electron": "25.3.2",
+    "jsdoc": "^4.0.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   },
