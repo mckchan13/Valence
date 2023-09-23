@@ -16,9 +16,8 @@ export class Valence {
   private process: NodeJS.Process;
 
   /**
-   * Constructor will load any provided datasources into the Valence instance, making
-   * the datasource available in the context object of the middleware functions.
-   * 
+   * @constructor Provide an optional config objects that specifies datasources
+   * will become available in the context object of the middleware functions.
    * @param config An optional configuration object houses any datasources (databases, external APIs).
    * Datasources will be available in the context object of the middleware functions
    */
@@ -32,10 +31,8 @@ export class Valence {
 
   /**
    * A method to append middleware functions that run before all routes execute.
-   * 
    * @param middleware Any middleware functions that will receive a context object
    * and a call to the next function in the middleware pipeline.
-   * 
    * @return Valences instance - Optionally chain additional calls to usePreHook
    */
   public usePreHook(...middleware: ValenceMiddleware[]): Valence {
@@ -45,12 +42,9 @@ export class Valence {
 
   /**
    * A method to append middleware functions that runs on the specified route.
-   * 
    * @param routeName The specified route to run the middleware functions on.
-   * 
    * @param middleware Any middleware functions that will receive a context object
    * and a call to the next function in the middleware pipeline.
-   * 
    * @return Valences instance - Optionally chain additional calls to use
    */
   public use(routeName: string, ...middleware: ValenceMiddleware[]): Valence {
@@ -66,9 +60,7 @@ export class Valence {
 
   /**
    * A method to load a datasource. Datasources will be available via the context object in middleware functions.
-   * 
    * @param datasources A user specified object containing references to the datasources.
-   * 
    * @return void
    */
   public loadDatasource(
@@ -79,9 +71,7 @@ export class Valence {
 
   /**
    * A method to add a datasource. Datasources will be available via the context object in middleware functions.
-   * 
    * @param key A key to identify the data source in the datasource object.
-   * 
    * @param datasources A user specified object containing references to the datasources.
    */
   public addDatasource<T = unknown>(key: string, datasource: T): void {
@@ -91,10 +81,8 @@ export class Valence {
   /**
    * A method when called, sets the event listener on a specified port.
    * The default port is the parentPort of the the spawned Node.js process.
-   * 
    * @param port By default the listener is set to the parentPort.
    * If a port is specified, the listener will be set on the specified port.
-   * 
    * @param callback An optional callback that will run after setting the port listener.
    * The port being listened to will be exposed as the first argument of the callback.
    * By default, the port is the parentPort of the spawned Node.js process.
