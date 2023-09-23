@@ -6,7 +6,10 @@ export type ValenceResponseStatus = "success" | "failure" | "pending" | string;
 
 export type ElectronPorts = Electron.ParentPort | MessagePortMain;
 
-export type Datasources<K extends string | symbol | number, V> = Record<K, V>;
+export type ValenceDatasources<
+  T extends string | number | symbol = string,
+  K = unknown
+> = Record<T, K>;
 
 export type ValenceExecutor = (ctx: ValenceContext) => void | Promise<void>;
 
@@ -52,7 +55,7 @@ export type ValenceContext<B = unknown, D = unknown> = {
   request: ValenceMainRequest<B>;
   response: ValenceResponse<B>;
   body: B;
-  datasources: Datasources<string, D>;
+  datasources: ValenceDatasources<string, D>;
 };
 
 export type ValenceMiddleware = (
@@ -64,3 +67,7 @@ export type ValenceRoute = {
   pipeline: ValenceMiddleware[];
   executor?: ValenceExecutor;
 };
+
+export interface ValenceBuilder<T> {
+  build: () => T;
+}

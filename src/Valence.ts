@@ -3,10 +3,10 @@ import ValenceContextBuilder from "./ContextBuilder";
 import {
   ValenceMiddleware,
   ElectronPorts,
-  Datasources,
   ValenceContext,
   ValenceRoute,
   ValenceRequestObject,
+  ValenceDatasources,
 } from "./types";
 
 export class Valence {
@@ -15,21 +15,44 @@ export class Valence {
   private preHooks: ValenceMiddleware[] = [];
   private process: NodeJS.Process;
 
-  constructor(public config?: { datasources?: unknown }) {
+  /**
+   * Constructor will load any provided datasources into the Valence instance, making
+   * the datasource available in the context object of the middleware functions.
+   * 
+   * @param config An optional configuration object houses any datasources (databases, external APIs).
+   * Datasources will be available in the context object of the middleware functions
+   */
+  constructor(public config?: { datasources?: ValenceDatasources }) {
     this.process = process;
 
     if (this.config && this.config.datasources) {
-      this.contextBuilder.loadDatasources(
-        this.config.datasources as Datasources<string, unknown>
-      );
+      this.contextBuilder.loadDatasources(this.config.datasources);
     }
   }
 
+  /**
+   * A method to append middleware functions that run before all routes execute.
+   * 
+   * @param middleware Any middleware functions that will receive a context object
+   * and a call to the next function in the middleware pipeline.
+   * 
+   * @return Valences instance - Optionally chain additional calls to usePreHook
+   */
   public usePreHook(...middleware: ValenceMiddleware[]): Valence {
     this.preHooks.push(...middleware);
     return this;
   }
 
+  /**
+   * A method to append middleware functions that runs on the specified route.
+   * 
+   * @param routeName The specified route to run the middleware functions on.
+   * 
+   * @param middleware Any middleware functions that will receive a context object
+   * and a call to the next function in the middleware pipeline.
+   * 
+   * @return Valences instance - Optionally chain additional calls to use
+   */
   public use(routeName: string, ...middleware: ValenceMiddleware[]): Valence {
     if (!this.routesMap.has(routeName)) {
       this.routesMap.set(routeName, { pipeline: [], executor: undefined });
@@ -41,17 +64,41 @@ export class Valence {
     return this;
   }
 
+  /**
+   * A method to load a datasource. Datasources will be available via the context object in middleware functions.
+   * 
+   * @param datasources A user specified object containing references to the datasources.
+   * 
+   * @return void
+   */
   public loadDatasource(
-    datasources: Datasources<string, unknown>
-  ): ValenceContextBuilder {
+    datasources: ValenceDatasources<string, unknown>
+  ): void {
     this.contextBuilder.loadDatasources(datasources);
-    return this.contextBuilder;
   }
 
+  /**
+   * A method to add a datasource. Datasources will be available via the context object in middleware functions.
+   * 
+   * @param key A key to identify the data source in the datasource object.
+   * 
+   * @param datasources A user specified object containing references to the datasources.
+   */
   public addDatasource<T = unknown>(key: string, datasource: T): void {
     this.contextBuilder.setDatasource(key, datasource);
   }
 
+  /**
+   * A method when called, sets the event listener on a specified port.
+   * The default port is the parentPort of the the spawned Node.js process.
+   * 
+   * @param port By default the listener is set to the parentPort.
+   * If a port is specified, the listener will be set on the specified port.
+   * 
+   * @param callback An optional callback that will run after setting the port listener.
+   * The port being listened to will be exposed as the first argument of the callback.
+   * By default, the port is the parentPort of the spawned Node.js process.
+   */
   public listen(callback?: (port: ElectronPorts) => void): void;
   public listen(
     port?: ElectronPorts,
@@ -75,7 +122,7 @@ export class Valence {
     port.on("message", async ({ data, ports }: Electron.MessageEvent) => {
       const request: ValenceRequestObject = data;
       const portToReceiver = ports[0];
-      await this.processRequest(request, portToReceiver);
+      await this.mediateRequest(request, portToReceiver);
     });
 
     if (callback !== undefined) {
@@ -83,7 +130,7 @@ export class Valence {
     }
   }
 
-  private async processRequest(
+  private async mediateRequest(
     request: ValenceRequestObject,
     port: MessagePortMain
   ): Promise<void> {

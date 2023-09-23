@@ -1,38 +1,33 @@
 import { MessagePortMain } from "electron";
 import {
-  Datasources,
+  ValenceBuilder,
   ValenceContext,
+  ValenceDatasources,
   ValenceMainRequest,
   ValenceResponse,
   ValenceResponseStatus,
 } from "./types";
 
-class ValenceContextBuilder {
-  private datasources: Datasources<string, unknown> = {};
+class ValenceContextBuilder implements ValenceBuilder<ValenceContext> {
+  private datasources: ValenceDatasources = {};
   private request: ValenceMainRequest | undefined = undefined;
   private response: ValenceResponse | undefined = undefined;
   private port: MessagePortMain | undefined = undefined;
 
-  constructor(public config?: { datasources?: Datasources<string, unknown> }) {
+  constructor(public config?: { datasources?: ValenceDatasources }) {
     if (this.config !== undefined && this.config.datasources !== undefined) {
       this.loadDatasources(this.config.datasources);
     }
   }
 
   public build(): ValenceContext {
-    if (
-      this.request === undefined ||
-      this.response === undefined ||
-      this.port === undefined
-    ) {
-      throw new Error(
-        "No request or response was loaded, context not ready to build."
-      );
-    }
+    this.assertsValueIsDefined(this.request);
+    this.assertsValueIsDefined(this.response);
+    this.assertsValueIsDefined(this.port);
 
     const request: ValenceMainRequest = this.request;
     const response: ValenceResponse = this.response;
-    const datasources: Datasources<string, unknown> = this.datasources;
+    const datasources: Record<string, unknown> = this.datasources;
 
     const context: ValenceContext = {
       request,
@@ -54,12 +49,8 @@ class ValenceContextBuilder {
     return this;
   }
 
-  public getDatasources(): Datasources<string, unknown> {
-    return this.datasources;
-  }
-
   public loadDatasources(
-    datasources: Datasources<string, unknown>
+    datasources: Record<string | number | symbol, unknown>
   ): ValenceContextBuilder {
     this.datasources = datasources;
     return this;
@@ -76,9 +67,8 @@ class ValenceContextBuilder {
   }
 
   public loadResponse(): ValenceContextBuilder {
-    if (this.request === undefined || this.port === undefined) {
-      throw new Error("No request loaded. No response can be generated.");
-    }
+    this.assertsValueIsDefined(this.request);
+    this.assertsValueIsDefined(this.port);
 
     const { method, route } = this.request;
 
@@ -86,9 +76,9 @@ class ValenceContextBuilder {
 
     const response: ValenceResponse = {
       method,
-      status: "pending",
       port: port,
       payload: undefined,
+      status: "pending",
       route,
       setStatus: function (status: ValenceResponseStatus) {
         this.status = status;
@@ -118,6 +108,14 @@ class ValenceContextBuilder {
   private reset(): void {
     this.request = undefined;
     this.response = undefined;
+  }
+
+  private assertsValueIsDefined<T>(
+    value: unknown
+  ): asserts value is NonNullable<T> {
+    if (value === undefined || value === null) {
+      throw new Error("Value is undefined or null.");
+    }
   }
 }
 
