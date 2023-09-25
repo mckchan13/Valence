@@ -16,15 +16,18 @@ npm install valence
 
 ```typescript
 // Main process
+const path = require("path")
+const utilityProcess = require("electron");
+
 const childScriptPath = path.join(__dirname, "./src/child.js");
 const child = utilityProcess.fork(childScriptPath);
 
-child.parentPort.on("message", (event) => {
-  console.log(event.data)
+child.on("message", (event) => {
   // will console log "Hello from the child!" when the child responds
+  console.log(event.data)
 })
 
-child.parentPort.postMessage({
+child.postMessage({
   request: { route: "sayHelloWorld", method: "GET" },
 });
 
